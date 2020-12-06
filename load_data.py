@@ -7,6 +7,8 @@ import os
 import pandas as pd
 from typing import Optional, List, Union
 
+FIRST_DAY_OF_HISTORIES = dt.date(year=2020, month=2, day=26)
+
 
 def download_ages_data(destination: Optional[str]=config.ages_dir):
     """
@@ -63,7 +65,7 @@ def load_ages_capacity_data(start: dt.date, end: dt.date,
         'TestGesamt': 'tested',
         'MeldeDatum': 'date',
         'FZHosp': 'hospitalized',
-        'FZICO': 'icu', # intensive care unit
+        'FZICU': 'icu', # intensive care unit
         'FZHospFree': 'hospital_free',
         'FZICUFree': 'icu_free',
         'BundeslandID': 'region_id',
@@ -74,7 +76,7 @@ def load_ages_capacity_data(start: dt.date, end: dt.date,
     data = pd.read_csv(file, header=0, sep=';').rename(columns=rename_map).drop(columns=columns_to_drop)
     data['date'] = pd.to_datetime(data['date'], format='%d.%m.%Y %H:%M:%S')
 
-    data = data.loc[(data['date'].dt.date < end ) & (data['date'].dt.date > start)]
+    data = data.loc[(data['date'].dt.date < end) & (data['date'].dt.date > start)]
 
     return data
 
@@ -107,19 +109,19 @@ def load_ages_cases_by_age_and_sex(file: str = os.path.join(config.ages_dir, 'Co
     return data
 
 
-def load_ages_cases_by_community(file: str = os.path.join(config.ages_dir, 'CovidFaelle_GKZ.csv')
+def load_ages_cases_by_district(file: str = os.path.join(config.ages_dir, 'CovidFaelle_GKZ.csv')
                                  ) -> pd.DataFrame:
     """
-    Loads the current numbers of total active, recovered and died cases by community in Austria from the AGES file
-    CovidFallzahlen.csv.
+    Loads the current numbers of total active, recovered and died cases by district in Austria from the AGES file
+    CovidFaelle_GKZ.csv.
 
     :param file:
-    :return: pd.DataFrame with columns 'community', 'community_id', 'population', 'total', 'dead', 'cases_7days'
+    :return: pd.DataFrame with columns 'district', 'district_id', 'population', 'total', 'dead', 'cases_7days'
     """
     # ToDo: MultiIndex Date + Region?
     rename_map = {
-        'Bezirk': 'community',
-        'GKZ': 'community_id',
+        'Bezirk': 'district',
+        'GKZ': 'district_id',
         'AnzEinwohner': 'population',
         'Anzahl': 'total',
         'AnzahlTot': 'dead',
@@ -128,6 +130,77 @@ def load_ages_cases_by_community(file: str = os.path.join(config.ages_dir, 'Covi
 
     data = pd.read_csv(file, header=0, sep=';').rename(columns=rename_map)
     return data
+
+
+def load_ages_cases_by_district_series(start: dt.date, end: dt.date,
+                                        file: str = os.path.join(config.ages_dir, 'CovidFaelle_Timeline_GKZ.csv')
+                                        ) -> pd.DataFrame:
+    """
+    Loads the time series of cases per district from the file  CovidFaelle_Timeline_GKZ.csv.
+
+    :param file: ages file
+    :param start:
+    :param end:
+    :param kinds:
+    :return: pd.DataFrame with columns 'date', 'district', 'district_id', 'population', 'infected', 'total',
+        'cases_7days', '7days_incidence', 'dead', 'dead_total', 'recovered', 'recovered_total'
+    """
+
+    rename_map = {
+        'Time': 'date',
+        'Bezirk': 'district',
+        'GKZ': 'district_id',
+        'AnzEinwohner': 'population',
+        'AnzahlFaelle': 'infected',
+        'AnzahlFaelleSum': 'total',
+        'AnzahlFaelle7Tage': 'cases_7days',
+        'SiebenTageINzidenzFaelle': '7days_incidence',
+        'AnzahlTotTaeglich': 'dead',
+        'AnzahlTotSum': 'dead_total',
+        'AnzahlGeheiltTaeglich': 'recovered',
+        'AnazhlGeheiltSum': 'recovered_total'
+    }
+    data = pd.read_csv(file, header=0, sep=';').rename(columns=rename_map)
+    data['date'] = pd.to_datetime(data['date'], format='%d.%m.%Y %H:%M:%S')
+    data = data.loc[(data['date'].dt.date < end) & (data['date'].dt.date > start)]
+
+    return data
+
+
+def load_ages_cases_timeline(start: dt.date, end: dt.date,
+                             file: str = os.path.join(config.ages_dir, 'CovidFaelle_Timeline.csv')) -> pd.DataFrame:
+    """
+    Loads the time series of Covid cases from the file CovidFaelle_Timeline.csv.
+
+    :param file: ages file
+    :param start:
+    :param end:
+    :param kinds:
+    :return: pd.DataFrame with columns 'date', 'infected', 'recovered', 'died', 'active', and 'tested'
+    """
+
+    rename_map = {
+        'Time': 'date',
+        'Bezirk': 'region',
+        'GKZ': 'region_id',
+        'AnzEinwohner': 'population',
+        'AnzahlFaelle': 'infected',
+        'AnzahlFaelleSum': 'total',
+        'AnzahlFaelle7Tage': 'cases_7days',
+        'SiebenTageINzidenzFaelle': '7days_incidence',
+        'AnzahlTotTaeglich': 'dead',
+        'AnzahlTotSum': 'dead_total',
+        'AnzahlGeheiltTaeglich': 'recovered',
+        'AnazhlGeheiltSum': 'recovered_total'
+    }
+    data = pd.read_csv(file, header=0, sep=';').rename(columns=rename_map)
+    data['date'] = pd.to_datetime(data['date'], format='%d.%m.%Y %H:%M:%S')
+    data = data.loc[(data['date'].dt.date < end) & (data['date'].dt.date > start)]
+
+    return data
+
+
+#ToDo: data validation checks
 
 
 if __name__ == '__main__':
@@ -145,5 +218,13 @@ if __name__ == '__main__':
     cases_age_and_sex = load_ages_cases_by_age_and_sex()
     print(cases_age_and_sex)
 
-    cases_community = load_ages_cases_by_community()
-    print(cases_community)
+    cases_district = load_ages_cases_by_district()
+    print(cases_district)
+
+    cases_district_series = load_ages_cases_by_district_series(start=start, end=end)
+    print(cases_district_series)
+
+    cases_timeline = load_ages_cases_timeline(start, end)
+    print(cases_timeline)
+
+
