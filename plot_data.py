@@ -50,5 +50,36 @@ def plot_icus_time_line(regions: Union[str, List[str]] = 'Alle',
     plt.show()
 
 
+def plot_7days_incidence(regions: Union[str, List[str]] = 'Österreich',
+                        start: Optional[dt.date] = ld.FIRST_DAY_OF_HISTORIES,
+                        end: Optional[dt.date] = dt.date.today(),
+                        data: Optional[pd.DataFrame] = None,
+                        ylog: Optional[bool] = False):
+    if data is None:
+        data = ld.load_ages_cases_timeline(start, end)
+    else:
+        data = data.loc[start < data['date'] < end, :]
+
+    if isinstance(regions, str):
+        regions = [regions]
+
+    # fig, ax = plt.figure()
+    legend_labels = []
+    for reg in regions:
+        region_data = data.loc[data['region'] == reg, :]
+        region_data.plot(x='date', y='7days_incidence')
+        legend_labels.append(reg)
+
+    if ylog:
+        plt.semilogy()
+
+    plt.xlabel('Time')
+    plt.ylabel('7 Tage Inzidenz')
+    plt.legend(legend_labels)
+    plt.show()
+
+
 if __name__=='__main__':
+    # ld.download_ages_data()
     plot_icus_time_line()
+    plot_7days_incidence(ylog=True)

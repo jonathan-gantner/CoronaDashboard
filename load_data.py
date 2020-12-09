@@ -154,7 +154,7 @@ def load_ages_cases_by_district_series(start: dt.date, end: dt.date,
         'AnzahlFaelle': 'infected',
         'AnzahlFaelleSum': 'total',
         'AnzahlFaelle7Tage': 'cases_7days',
-        'SiebenTageINzidenzFaelle': '7days_incidence',
+        'SiebenTageInzidenzFaelle': '7days_incidence',
         'AnzahlTotTaeglich': 'dead',
         'AnzahlTotSum': 'dead_total',
         'AnzahlGeheiltTaeglich': 'recovered',
@@ -181,20 +181,22 @@ def load_ages_cases_timeline(start: dt.date, end: dt.date,
 
     rename_map = {
         'Time': 'date',
-        'Bezirk': 'region',
-        'GKZ': 'region_id',
+        'Bundesland': 'region',
+        'BundeslandID': 'region_id',
         'AnzEinwohner': 'population',
         'AnzahlFaelle': 'infected',
         'AnzahlFaelleSum': 'total',
         'AnzahlFaelle7Tage': 'cases_7days',
-        'SiebenTageINzidenzFaelle': '7days_incidence',
+        'SiebenTageInzidenzFaelle': '7days_incidence',
         'AnzahlTotTaeglich': 'dead',
         'AnzahlTotSum': 'dead_total',
         'AnzahlGeheiltTaeglich': 'recovered',
         'AnazhlGeheiltSum': 'recovered_total'
     }
-    data = pd.read_csv(file, header=0, sep=';').rename(columns=rename_map)
+    data = pd.read_csv(file, header=0, sep=';', decimal=',').rename(columns=rename_map)
     data['date'] = pd.to_datetime(data['date'], format='%d.%m.%Y %H:%M:%S')
+
+
     data = data.loc[(data['date'].dt.date < end) & (data['date'].dt.date > start)]
 
     return data
